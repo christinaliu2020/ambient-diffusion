@@ -124,18 +124,18 @@ class Dataset(torch.utils.data.Dataset):
             image = image.astype(np.float32) / 127.5 - 1
         if self.corruption_pattern == "dust":
             if self.mask_full_rgb:
-                # corruption_mask = np.random.binomial(1, 1 - self.corruption_probability, size=image.shape[1:]).astype(np.float32)
-                # corruption_mask = corruption_mask[np.newaxis, :, :].repeat(image.shape[0], axis=0)
-                # extra_mask = np.random.binomial(1, 1 - self.delta_probability, size=image.shape[1:]).astype(np.float32)
-                # extra_mask = extra_mask[np.newaxis, :, :].repeat(image.shape[0], axis=0)
-                # hat_corruption_mask = np.minimum(corruption_mask, extra_mask)
-                noise = np.random.normal(0, self.corruption_probability, size=image.shape)
-                corrupted_image = image + noise
+                corruption_mask = np.random.binomial(1, 1 - self.corruption_probability, size=image.shape[1:]).astype(np.float32)
+                corruption_mask = corruption_mask[np.newaxis, :, :].repeat(image.shape[0], axis=0)
+                extra_mask = np.random.binomial(1, 1 - self.delta_probability, size=image.shape[1:]).astype(np.float32)
+                extra_mask = extra_mask[np.newaxis, :, :].repeat(image.shape[0], axis=0)
+                hat_corruption_mask = np.minimum(corruption_mask, extra_mask)
+                # noise = np.random.normal(0, self.corruption_probability, size=image.shape)
+                # corrupted_image = image + noise
             else:
-                noise = np.random.normal(0, self.corruption_probability, size=image.shape[1:])
-                corrupted_image = image + noise
-                # corruption_mask = np.random.binomial(1, 1 - self.corruption_probability, size=image.shape).astype(np.float32)
-                # hat_corruption_mask = np.minimum(corruption_mask, np.random.binomial(1, 1 - self.delta_probability, size=image.shape).astype(np.float32))
+                # noise = np.random.normal(0, self.corruption_probability, size=image.shape[1:])
+                # corrupted_image = image + noise
+                corruption_mask = np.random.binomial(1, 1 - self.corruption_probability, size=image.shape).astype(np.float32)
+                hat_corruption_mask = np.minimum(corruption_mask, np.random.binomial(1, 1 - self.delta_probability, size=image.shape).astype(np.float32))
         elif self.corruption_pattern == "box":
             corruption_mask = get_box_mask((1,) + image.shape, 1 - self.corruption_probability, same_for_all_batch=False, device='cpu')[0]
             hat_corruption_mask = get_box_mask((1,) + image.shape, 1 - self.corruption_probability, same_for_all_batch=False, device='cpu')[0]
@@ -157,7 +157,7 @@ class Dataset(torch.utils.data.Dataset):
         else:
             raise NotImplementedError("Corruption pattern not implemented")
             
-        return corrupted_image.copy(), self.get_label(idx)#, corruption_mask, hat_corruption_mask
+        return image.copy(), self.get_label(idx), corruption_mask, hat_corruption_mask
 
     def get_label(self, idx):
         label = self._get_raw_labels()[self._raw_idx[idx]]
